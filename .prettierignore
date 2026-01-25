@@ -1,0 +1,8 @@
+node_modules/
+dist/
+allure-results/
+allure-report/
+test-results/
+playwright-report/
+coverage/
+*.min.js
