@@ -25,14 +25,13 @@ test.describe('TodoMVC Application', () => {
     expect(isVisible).toBeTruthy();
 
     // Verify no todos initially
-    const todoCount = await pages.todoPage.getTodoCount();
-    expect(todoCount).toBe(0);
+    await pages.todoPage.expectTodoCount(0);
 
     await pages.todoPage.takeScreenshot('TodoMVC Initial State');
 
     await attachment(
       'Initial State Info',
-      `Input visible: ${isVisible}, Todo count: ${todoCount}`,
+      `Input visible: ${isVisible}, starting URL: ${pages.todoPage.getCurrentUrl()}`,
       ContentType.TEXT
     );
   });
@@ -49,13 +48,11 @@ test.describe('TodoMVC Application', () => {
 
     await pages.todoPage.addTodo(todoText);
 
-    const todoCount = await pages.todoPage.getTodoCount();
-    expect(todoCount).toBe(1);
+    await pages.todoPage.expectTodoCount(1);
 
     await pages.todoPage.verifyTodoText(0, todoText);
 
-    const remainingCount = await pages.todoPage.getRemainingCount();
-    expect(remainingCount).toContain('1');
+    await pages.todoPage.expectRemainingCount('1');
 
     await pages.todoPage.takeScreenshot('After adding todo');
   });
@@ -70,11 +67,9 @@ test.describe('TodoMVC Application', () => {
 
     await pages.todoPage.addTodos(todos);
 
-    const todoCount = await pages.todoPage.getTodoCount();
-    expect(todoCount).toBe(3);
+    await pages.todoPage.expectTodoCount(3);
 
-    const todoTexts = await pages.todoPage.getTodoTexts();
-    expect(todoTexts).toEqual(todos);
+    await pages.todoPage.expectTodoTexts(todos);
 
     await pages.todoPage.takeScreenshot('Multiple todos added');
   });
@@ -93,8 +88,7 @@ test.describe('TodoMVC Application', () => {
     const isCompleted = await pages.todoPage.isTodoCompleted(0);
     expect(isCompleted).toBeTruthy();
 
-    const remainingCount = await pages.todoPage.getRemainingCount();
-    expect(remainingCount).toContain('0');
+    await pages.todoPage.expectRemainingCount('0');
 
     await pages.todoPage.takeScreenshot('Todo completed');
   });
@@ -108,15 +102,13 @@ test.describe('TodoMVC Application', () => {
     const todos = ['Keep this', 'Delete this'];
 
     await pages.todoPage.addTodos(todos);
-    expect(await pages.todoPage.getTodoCount()).toBe(2);
+    await pages.todoPage.expectTodoCount(2);
 
     await pages.todoPage.deleteTodoByText('Delete this');
 
-    const todoCount = await pages.todoPage.getTodoCount();
-    expect(todoCount).toBe(1);
+    await pages.todoPage.expectTodoCount(1);
 
-    const todoTexts = await pages.todoPage.getTodoTexts();
-    expect(todoTexts).toEqual(['Keep this']);
+    await pages.todoPage.expectTodoTexts(['Keep this']);
 
     await pages.todoPage.takeScreenshot('After deletion');
   });
@@ -148,21 +140,18 @@ test.describe('TodoMVC Application', () => {
 
     // Filter by active
     await pages.todoPage.filterByActive();
-    let visibleCount = await pages.todoPage.getTodoCount();
-    expect(visibleCount).toBe(2);
+    await pages.todoPage.expectTodoCount(2);
     await pages.todoPage.takeScreenshot('Active filter');
 
     // Filter by completed
     await pages.todoPage.filterByCompleted();
-    visibleCount = await pages.todoPage.getTodoCount();
-    expect(visibleCount).toBe(1);
+    await pages.todoPage.expectTodoCount(1);
     await pages.todoPage.takeScreenshot('Completed filter');
 
     // Back to all — through the app's own filter, not a reload, so this still asserts
     // that filtering restores the full list rather than that the app reloads cleanly.
     await pages.todoPage.filterByAll();
-    visibleCount = await pages.todoPage.getTodoCount();
-    expect(visibleCount).toBe(3);
+    await pages.todoPage.expectTodoCount(3);
     await pages.todoPage.takeScreenshot('All todos');
   });
 
@@ -178,11 +167,9 @@ test.describe('TodoMVC Application', () => {
 
     await pages.todoPage.clearCompletedTodos();
 
-    const todoCount = await pages.todoPage.getTodoCount();
-    expect(todoCount).toBe(1);
+    await pages.todoPage.expectTodoCount(1);
 
-    const todoTexts = await pages.todoPage.getTodoTexts();
-    expect(todoTexts).toEqual(['Task 2']);
+    await pages.todoPage.expectTodoTexts(['Task 2']);
 
     await pages.todoPage.takeScreenshot('After clearing completed');
   });

@@ -54,14 +54,36 @@ export class TodoPage extends BasePage {
     }
   }
 
+  /**
+   * A one-shot count, for tests that need the number itself.
+   *
+   * Prefer {@link expectTodoCount} when asserting: `count()` does not retry, so anything
+   * that reads it right after a state change can observe the list mid-update. Switching a
+   * filter is the clearest case — the URL changes before the app re-renders the list.
+   */
   @step('Get todo count')
   async getTodoCount(): Promise<number> {
     return await this.todoItems.count();
   }
 
+  @step('Expect {0} todo(s) to be visible')
+  async expectTodoCount(expected: number): Promise<void> {
+    await expect(this.todoItems).toHaveCount(expected);
+  }
+
   @step('Get all todo texts')
   async getTodoTexts(): Promise<string[]> {
     return await this.todoLabels.allTextContents();
+  }
+
+  @step('Expect todos to be: {0}')
+  async expectTodoTexts(expected: string[]): Promise<void> {
+    await expect(this.todoLabels).toHaveText(expected);
+  }
+
+  @step('Expect the remaining-items counter to contain: {0}')
+  async expectRemainingCount(expected: string): Promise<void> {
+    await expect(this.todoCount).toContainText(expected);
   }
 
   @step('Toggle todo at index: {0}')
