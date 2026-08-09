@@ -42,17 +42,17 @@
     "check": "npm run typecheck && npm run lint && npm run format:check"
   },
   "devDependencies": {
-    "@eslint/js": "^9.18.0",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.50.0",
     "@types/node": "^22.10.0",
     "allure-commandline": "^2.30.0",
     "allure-js-commons": "^3.4.5",
     "allure-playwright": "^3.0.0",
     "dotenv": "^16.4.7",
-    "eslint": "^9.18.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-playwright": "^2.1.0",
-    "prettier": "^3.4.2",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.11.0",
+    "prettier": "^3.9.6",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
     "zod": "^3.25.76"
