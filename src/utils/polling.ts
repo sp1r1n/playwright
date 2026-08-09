@@ -59,11 +59,12 @@ export class Polling<T> {
     while (!condition(result) && Date.now() - startTime < this.timeout) {
       await new Promise(resolve => setTimeout(resolve, this.interval));
       const newResponse = await this.call();
-      result = await newResponse.json();
+      result = (await newResponse.json()) as T;
     }
 
     if (!condition(result)) {
-      const errorMessage = this.message || `Condition not met: [${condition.toString()}] in ${this.timeout} ms`;
+      const errorMessage =
+        this.message || `Condition not met: [${condition.toString()}] in ${this.timeout} ms`;
       throw new Error(errorMessage);
     }
 
@@ -83,7 +84,11 @@ export async function wait(ms: number): Promise<void> {
  */
 export async function retry<T>(
   fn: () => Promise<T>,
-  options: { retries?: number; delay?: number; onRetry?: (error: Error, attempt: number) => void } = {}
+  options: {
+    retries?: number;
+    delay?: number;
+    onRetry?: (error: Error, attempt: number) => void;
+  } = {}
 ): Promise<T> {
   const { retries = 3, delay = 1000, onRetry } = options;
 
@@ -103,5 +108,7 @@ export async function retry<T>(
     }
   }
 
-  throw lastError;
+  // The loop only exits here after a throw, so lastError is always set; the fallback
+  // keeps the type honest rather than asserting it away.
+  throw lastError ?? new Error('retry() exhausted its attempts without capturing an error');
 }

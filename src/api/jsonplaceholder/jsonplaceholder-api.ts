@@ -1,8 +1,8 @@
 import { APIRequestContext } from '@playwright/test';
-import { ApiClient } from '../core/api-client';
+import { ApiClient } from '@api/core/api-client';
 import { PostsService } from './services/posts.service';
 import { UsersService } from './services/users.service';
-import { step } from '../../utils/decorators';
+import { step } from '@utils/decorators';
 
 /**
  * JSONPlaceholder API Client

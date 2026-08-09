@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      # Playwright's runner and its Allure reporter track each other; splitting them
+      # produces PRs that only pass once both are merged.
+      playwright:
+        patterns:
+          - '@playwright/*'
+          - 'allure-*'
+      linting:
+        patterns:
+          - 'eslint*'
+          - '@eslint/*'
+          - 'typescript-eslint'
+          - 'prettier*'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

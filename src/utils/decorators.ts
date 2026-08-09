@@ -2,43 +2,47 @@ import { test, APIResponse } from '@playwright/test';
 import { ContentType, attachment } from 'allure-js-commons';
 
 /**
- * Replace argument placeholders in step name string
- * Example: replaceArgs('Get user {0}', 123) -> 'Get user 123'
+ * Substitutes positional placeholders in a step name.
+ *
+ * `replaceArgs('Get user {0}', 123)` produces `Get user 123`.
  */
-const replaceArgs = (strValue: string, ...params: Array<unknown>): string => {
-  let str = strValue;
-  params.forEach((param, index) => {
-    str = str.replace(`{${index}}`, JSON.stringify(param));
-  });
-  return str;
-};
+const replaceArgs = (template: string, ...params: unknown[]): string =>
+  params.reduce<string>(
+    (result, param, index) => result.replace(`{${index}}`, JSON.stringify(param) ?? String(param)),
+    template
+  );
 
 /**
- * Step decorator for class methods
- * Wraps method execution in test.step for Allure reporting
+ * Wraps a method in `test.step`, so the Allure report shows the page object's own vocabulary
+ * ("Add todo: Buy milk") instead of a flat list of clicks and fills.
  *
- * Usage:
+ * These are TC39 standard decorators, not the legacy `experimentalDecorators` proposal — see
+ * the note in `tsconfig.json`. The generics sit on the inner function so that each decoration
+ * site keeps the method's real parameter and return types.
+ *
+ * ```ts
  * @step('Click button {0}')
- * async clickButton(name: string) { ... }
+ * async clickButton(name: string) { … }
  *
- * @step((id) => `Get user with id ${id}`)
- * async getUser(id: number) { ... }
- *
- * @step() // Uses default: ClassName.methodName
- * async doSomething() { ... }
+ * @step() // falls back to ClassName.methodName
+ * async doSomething() { … }
+ * ```
  */
 export function step(stepName?: string | ((...args: unknown[]) => string)) {
-  return function decorator<T extends { constructor: { name: string } }>(
-    target: (this: T, ...args: unknown[]) => Promise<unknown>,
-    context: ClassMethodDecoratorContext
+  return function decorator<This, Args extends unknown[], Return>(
+    target: (this: This, ...args: Args) => Promise<Return>,
+    context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Promise<Return>>
   ) {
-    return async function replacementMethod(this: T, ...args: unknown[]) {
-      const stepNameFinal =
+    return async function replacementMethod(this: This, ...args: Args): Promise<Return> {
+      const className = (this as { constructor: { name: string } }).constructor.name;
+      const resolved =
         typeof stepName === 'function'
           ? stepName(...args)
-          : stepName ?? `${this.constructor.name}.${String(context.name)}`;
+          : (stepName ?? `${className}.${String(context.name)}`);
 
-      return await test.step(replaceArgs(stepNameFinal, ...args), async () => target.call(this, ...args), {
+      // `box: true` collapses the wrapper frame, so a failure points at the caller's line
+      // rather than at this file.
+      return test.step(replaceArgs(resolved, ...args), () => target.call(this, ...args), {
         box: true,
       });
     };
@@ -46,35 +50,39 @@ export function step(stepName?: string | ((...args: unknown[]) => string)) {
 }
 
 /**
- * LogRequest decorator for API client methods
- * Automatically logs request/response details to Allure
+ * Attaches the full request and response of an API call to the Allure report.
+ *
+ * Applied to `ApiClient` methods, whose first argument is always the URL.
  */
-export function LogRequest<T extends (...args: unknown[]) => Promise<APIResponse>>(
-  target: T,
-  context: ClassMethodDecoratorContext
+export function LogRequest<
+  This,
+  Args extends [url: string, ...rest: unknown[]],
+  Return extends APIResponse,
+>(
+  target: (this: This, ...args: Args) => Promise<Return>,
+  context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Promise<Return>>
 ) {
-  const originalMethod = target;
-  const requestMethod = context.name.toString().toUpperCase();
+  const method = String(context.name).toUpperCase();
 
-  return async function (this: unknown, url: string, ...restArgs: unknown[]) {
-    return await test.step(`${requestMethod} - ${url}`, async () => {
-      const response: APIResponse = await originalMethod.call(this, url, ...restArgs);
+  return async function replacementMethod(this: This, ...args: Args): Promise<Return> {
+    const [url] = args;
 
-      const request = `[API REQUEST] ${requestMethod} ${response.url()}`;
-      const status = `[API RESPONSE] Status: ${response.status()}`;
-      const responseHeaders = `[API RESPONSE HEADERS]\n${JSON.stringify(response.headers(), null, 2)}`;
+    return test.step(`${method} - ${url}`, async () => {
+      const response = await target.call(this, ...args);
 
-      let responseBody = '';
+      const lines = [
+        `[API REQUEST] ${method} ${response.url()}`,
+        `[API RESPONSE] Status: ${response.status()}`,
+        `[API RESPONSE HEADERS]\n${JSON.stringify(response.headers(), null, 2)}`,
+      ];
+
       try {
-        const body = await response.json();
-        responseBody = `[API RESPONSE BODY]\n${JSON.stringify(body, null, 2)}`;
+        lines.push(`[API RESPONSE BODY]\n${JSON.stringify(await response.json(), null, 2)}`);
       } catch {
-        // Response might not be JSON
+        // Not every response is JSON; the status and headers above are still worth attaching.
       }
 
-      const logMessage = `${request}\n${status}\n${responseHeaders}\n${responseBody}`;
-      await attachment(`${requestMethod} ${url}`, logMessage, ContentType.TEXT);
-
+      await attachment(`${method} ${url}`, lines.join('\n'), ContentType.TEXT);
       return response;
     });
   };

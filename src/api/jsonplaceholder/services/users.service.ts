@@ -1,8 +1,7 @@
 import { APIResponse } from '@playwright/test';
-import { ApiClient } from '../../core/api-client';
-import { step } from '../../../utils/decorators';
-import { userSchema, usersArraySchema } from '../models';
-import { postsArraySchema } from '../models';
+import { ApiClient } from '@api/core/api-client';
+import { step } from '@utils/decorators';
+import { userSchema, usersArraySchema, postsArraySchema } from '../models';
 
 /**
  * Users Service for JSONPlaceholder API
