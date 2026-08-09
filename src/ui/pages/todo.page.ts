@@ -1,13 +1,14 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base.page';
-import { step } from '../../utils/decorators';
+import { step } from '@utils/decorators';
 
 /**
  * TodoMVC Page Object
  * Based on Playwright's demo app - designed for testing automation
  */
 export class TodoPage extends BasePage {
-  protected readonly pageUrl = 'https://demo.playwright.dev/todomvc';
+  // Relative to `baseURL`, so the same suite can run against a local build of the app.
+  protected readonly pageUrl = '/todomvc';
   protected readonly pageName = 'TodoMVC App';
 
   // Locators

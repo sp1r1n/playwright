@@ -1,125 +1,96 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, type ReporterDescription } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Load environment variables from .env file
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-// Environment configuration
-const BASE_URL = process.env.BASE_URL || 'https://www.google.com';
-const API_BASE_URL = process.env.API_BASE_URL || 'https://jsonplaceholder.typicode.com';
-const HEADLESS = process.env.HEADLESS !== 'false';
 const CI = !!process.env.CI;
 
+/** Host the UI tests run against. Page objects hold paths, never full URLs. */
+const BASE_URL = process.env.BASE_URL ?? 'https://demo.playwright.dev';
+const API_BASE_URL = process.env.API_BASE_URL ?? 'https://jsonplaceholder.typicode.com';
+const HEADLESS = process.env.HEADLESS !== 'false';
+
+/**
+ * Runs against a browser already installed on the machine instead of Playwright's bundled
+ * Chromium — `chrome`, `msedge`, or a beta channel. Useful for reproducing something that
+ * only happens in the real browser, and as a way out when the bundled download is blocked.
+ */
+const BROWSER_CHANNEL = process.env.BROWSER_CHANNEL;
+
+/**
+ * Categories turn a wall of red into two piles: things the product broke, and things the
+ * suite broke. Only the first is worth waking someone up for.
+ */
+const allureCategories = [
+  {
+    name: 'Product defects',
+    messageRegex: '.*(AssertionError|expect\\(.*\\)).*',
+  },
+  {
+    name: 'Test infrastructure',
+    messageRegex: '.*(Timeout|ECONNREFUSED|net::ERR).*',
+  },
+];
+
+const allureReporter: ReporterDescription = [
+  'allure-playwright',
+  {
+    resultsDir: 'allure-results',
+    detail: true,
+    suiteTitle: true,
+    categories: allureCategories,
+    environmentInfo: {
+      NODE_VERSION: process.version,
+      OS: `${process.platform} ${process.arch}`,
+      BASE_URL,
+      API_BASE_URL,
+    },
+  },
+];
+
 export default defineConfig({
-  // Test directory
   testDir: './tests',
 
-  // Run tests in files in parallel
   fullyParallel: true,
 
-  // Fail the build on CI if you accidentally left test.only in the source code
+  // Fail the build rather than silently running a single focused test.
   forbidOnly: CI,
 
-  // Retry on CI only
+  // Retries hide flakiness locally, where it should be fixed instead.
   retries: CI ? 2 : 0,
-
-  // Opt out of parallel tests on CI
   workers: CI ? 2 : undefined,
 
-  // Reporter configuration
-  reporter: CI
-    ? [
-        ['list'],
-        ['html', { open: 'never' }],
-        [
-          'allure-playwright',
-          {
-            outputFolder: 'allure-results',
-            detail: true,
-            suiteTitle: true,
-            categories: [
-              {
-                name: 'Outdated tests',
-                messageRegex: '.*FileNotFound.*',
-              },
-              {
-                name: 'Product defects',
-                messageRegex: '.*AssertionError.*',
-              },
-            ],
-            environmentInfo: {
-              NODE_VERSION: process.version,
-              OS: process.platform,
-              BASE_URL: BASE_URL,
-              API_BASE_URL: API_BASE_URL,
-            },
-          },
-        ],
-      ]
-    : [
-        ['list'],
-        ['html', { open: 'on-failure' }],
-        [
-          'allure-playwright',
-          {
-            outputFolder: 'allure-results',
-            detail: true,
-            suiteTitle: true,
-          },
-        ],
-      ],
+  reporter: [['list'], ['html', { open: CI ? 'never' : 'on-failure' }], allureReporter],
 
-  // Shared settings for all the projects
   use: {
-    // Base URL to use in actions like `await page.goto('/')`
     baseURL: BASE_URL,
 
-    // Collect trace when retrying the failed test
+    // Locally the first failure is the one being debugged, so keep its trace. On CI only
+    // the retry is traced, which keeps artifacts small on a suite that mostly passes.
     trace: CI ? 'on-first-retry' : 'retain-on-failure',
-
-    // Capture screenshot on failure
     screenshot: 'only-on-failure',
-
-    // Record video on failure
     video: 'retain-on-failure',
 
-    // Headless mode
     headless: HEADLESS,
-
-    // Viewport settings
     viewport: { width: 1920, height: 1080 },
 
-    // Action timeout
-    actionTimeout: 15000,
-
-    // Navigation timeout
-    navigationTimeout: 30000,
-
-    // Ignore HTTPS errors
-    ignoreHTTPSErrors: true,
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
   },
 
-  // Global timeout for each test
-  timeout: 60000,
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
 
-  // Expect timeout
-  expect: {
-    timeout: 10000,
-  },
-
-  // Configure projects for major browsers
   projects: [
-    // UI Tests
     {
       name: 'ui-tests',
       testDir: './tests/ui',
       use: {
         ...devices['Desktop Chrome'],
+        ...(BROWSER_CHANNEL ? { channel: BROWSER_CHANNEL } : {}),
       },
     },
-
-    // API Tests
     {
       name: 'api-tests',
       testDir: './tests/api',
@@ -131,20 +102,7 @@ export default defineConfig({
         },
       },
     },
-
-    // Cross-browser testing (optional, uncomment if needed)
-    // {
-    //   name: 'firefox',
-    //   testDir: './tests/ui',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   testDir: './tests/ui',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
   ],
 
-  // Output folder for test artifacts
   outputDir: 'test-results',
 });

@@ -1,5 +1,5 @@
 import { test as base } from './base.fixture';
-import { JsonPlaceholderApi } from '../../src/api';
+import { JsonPlaceholderApi } from '@src/api';
 
 /**
  * API fixture types

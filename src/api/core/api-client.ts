@@ -1,22 +1,22 @@
 import { APIRequestContext, APIResponse } from '@playwright/test';
 import { ZodType, ZodError } from 'zod';
-import { LogRequest } from '../../utils/decorators';
+import { LogRequest } from '@utils/decorators';
 
 /**
- * Request options for API calls
+ * Options accepted by every request method.
+ *
+ * Derived from Playwright's own signature rather than hand-written, so the two cannot drift
+ * apart on a version bump. The `Pick` narrows it to the options this client supports.
  */
-export interface RequestOptions {
-  headers?: Record<string, string>;
-  params?: Record<string, string | number | boolean>;
-  data?: unknown;
-  form?: FormData | Record<string, string | number>;
-  multipart?: FormData | Record<string, unknown>;
-  timeout?: number;
-  failOnStatusCode?: boolean;
-}
+export type RequestOptions = Pick<
+  NonNullable<Parameters<APIRequestContext['get']>[1]>,
+  'headers' | 'params' | 'data' | 'form' | 'multipart' | 'timeout' | 'failOnStatusCode'
+>;
 
 /**
- * Zod validation error with additional context
+ * Raised when a response does not match its Zod schema. Carries the parsed body alongside the
+ * Zod error, because "expected string, received number at posts[3].title" is only actionable
+ * next to the payload it came from.
  */
 export class ZodValidationError extends Error {
   constructor(
@@ -29,36 +29,54 @@ export class ZodValidationError extends Error {
 }
 
 /**
- * Core API Client
- * Wraps Playwright's APIRequestContext with logging and validation
+ * Thin wrapper over Playwright's `APIRequestContext` adding two things: every call is logged
+ * into the Allure report by `@LogRequest`, and any response can be validated against a Zod
+ * schema.
+ *
+ * Validation is opt-in per call. Contract checks belong in the tests that are about the
+ * contract; forcing them on every request would make an unrelated test fail for an unrelated
+ * reason.
  */
 export class ApiClient {
   constructor(private context: APIRequestContext) {}
 
-  /**
-   * Get the underlying APIRequestContext
-   */
+  /** Escape hatch for requests this wrapper does not model. */
   getContext(): APIRequestContext {
     return this.context;
   }
 
   @LogRequest
-  async get(url: string, schema?: ZodType, options?: RequestOptions, validate: boolean = false): Promise<APIResponse> {
-    const response = await this.context.get(url, this.mapOptions(options));
+  async get(
+    url: string,
+    schema?: ZodType,
+    options?: RequestOptions,
+    validate = false
+  ): Promise<APIResponse> {
+    const response = await this.context.get(url, options);
     await this.validateResponse(url, schema, response, validate);
     return response;
   }
 
   @LogRequest
-  async post(url: string, schema?: ZodType, options?: RequestOptions, validate: boolean = false): Promise<APIResponse> {
-    const response = await this.context.post(url, this.mapOptions(options));
+  async post(
+    url: string,
+    schema?: ZodType,
+    options?: RequestOptions,
+    validate = false
+  ): Promise<APIResponse> {
+    const response = await this.context.post(url, options);
     await this.validateResponse(url, schema, response, validate);
     return response;
   }
 
   @LogRequest
-  async put(url: string, schema?: ZodType, options?: RequestOptions, validate: boolean = false): Promise<APIResponse> {
-    const response = await this.context.put(url, this.mapOptions(options));
+  async put(
+    url: string,
+    schema?: ZodType,
+    options?: RequestOptions,
+    validate = false
+  ): Promise<APIResponse> {
+    const response = await this.context.put(url, options);
     await this.validateResponse(url, schema, response, validate);
     return response;
   }
@@ -68,9 +86,9 @@ export class ApiClient {
     url: string,
     schema?: ZodType,
     options?: RequestOptions,
-    validate: boolean = false
+    validate = false
   ): Promise<APIResponse> {
-    const response = await this.context.patch(url, this.mapOptions(options));
+    const response = await this.context.patch(url, options);
     await this.validateResponse(url, schema, response, validate);
     return response;
   }
@@ -80,61 +98,47 @@ export class ApiClient {
     url: string,
     schema?: ZodType,
     options?: RequestOptions,
-    validate: boolean = false
+    validate = false
   ): Promise<APIResponse> {
-    const response = await this.context.delete(url, this.mapOptions(options));
+    const response = await this.context.delete(url, options);
     await this.validateResponse(url, schema, response, validate);
     return response;
   }
 
   @LogRequest
-  async head(url: string, schema?: ZodType, options?: RequestOptions, validate: boolean = false): Promise<APIResponse> {
-    const response = await this.context.head(url, this.mapOptions(options));
+  async head(
+    url: string,
+    schema?: ZodType,
+    options?: RequestOptions,
+    validate = false
+  ): Promise<APIResponse> {
+    const response = await this.context.head(url, options);
     await this.validateResponse(url, schema, response, validate);
     return response;
   }
 
-  /**
-   * Map our options to Playwright's request options
-   */
-  private mapOptions(options?: RequestOptions) {
-    if (!options) return undefined;
-
-    return {
-      headers: options.headers,
-      params: options.params,
-      data: options.data,
-      form: options.form,
-      multipart: options.multipart,
-      timeout: options.timeout,
-      failOnStatusCode: options.failOnStatusCode,
-    };
-  }
-
-  /**
-   * Validate response against Zod schema
-   */
   private async validateResponse(
     url: string,
     schema: ZodType | undefined,
     response: APIResponse,
-    validate: boolean = false
+    validate: boolean
   ): Promise<void> {
-    if (validate) {
-      if (!schema) {
-        throw new Error(`Schema is required for validation of ${url}`);
-      }
+    if (!validate) {
+      return;
+    }
+    if (!schema) {
+      throw new Error(`Schema is required for validation of ${url}`);
+    }
 
-      const body = await response.json();
+    const body: unknown = await response.json();
 
-      try {
-        await schema.parseAsync(body);
-      } catch (error) {
-        if (error instanceof ZodError) {
-          throw new ZodValidationError(error, { title: 'Validated Response', details: body });
-        }
-        throw error;
+    try {
+      await schema.parseAsync(body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new ZodValidationError(error, { title: 'Validated Response', details: body });
       }
+      throw error;
     }
   }
 }

@@ -1,0 +1,34 @@
+name: Flaky test
+description: A test that passes and fails without the code changing
+labels: [flaky]
+body:
+  - type: input
+    id: test
+    attributes:
+      label: Which test
+      placeholder: 'tests/ui/todo.spec.ts › should filter todos by status'
+    validations:
+      required: true
+
+  - type: input
+    id: frequency
+    attributes:
+      label: How often
+      description: A rough rate is enough, but it matters — 1 in 50 and 1 in 2 get fixed differently.
+      placeholder: 'about 1 run in 10'
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Links to failed runs, and the trace from `test-results/` if you have it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suspicion
+    attributes:
+      label: Suspected cause
+      description: Race with an animation, shared state between tests, a slow network call?

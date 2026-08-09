@@ -2,18 +2,28 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
+    "moduleResolution": "node",
+
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": ".",
+
+    // Nothing here is compiled for distribution: Playwright transpiles the specs itself,
+    // so `tsc` runs purely as a type checker.
+    //
+    // `experimentalDecorators` is deliberately absent. The `@step` and `@LogRequest`
+    // decorators are written against the TC39 standard decorators shipped in TypeScript 5;
+    // enabling the flag would switch the compiler to the legacy proposal, whose signatures
+    // those functions do not match.
+    "noEmit": true,
+
     "baseUrl": ".",
     "paths": {
       "@src/*": ["src/*"],
@@ -22,14 +32,14 @@
       "@utils/*": ["src/utils/*"],
       "@fixtures/*": ["tests/fixtures/*"]
     },
-    "types": ["node"],
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "types": ["node"]
   },
-  "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts",
-    "playwright.config.ts"
-  ],
-  "exclude": ["node_modules", "dist", "allure-results", "allure-report"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "playwright.config.ts", "eslint.config.js"],
+  "exclude": [
+    "node_modules",
+    "allure-results",
+    "allure-report",
+    "test-results",
+    "playwright-report"
+  ]
 }

@@ -1,7 +1,13 @@
 import { APIResponse } from '@playwright/test';
-import { ApiClient } from '../../core/api-client';
-import { step } from '../../../utils/decorators';
-import { postSchema, postsArraySchema, createPostResponseSchema, CreatePostPayload, UpdatePostPayload } from '../models';
+import { ApiClient } from '@api/core/api-client';
+import { step } from '@utils/decorators';
+import {
+  postSchema,
+  postsArraySchema,
+  createPostResponseSchema,
+  CreatePostPayload,
+  UpdatePostPayload,
+} from '../models';
 
 /**
  * Posts Service for JSONPlaceholder API
@@ -27,16 +33,29 @@ export class PostsService {
 
   @step('Create new post')
   async createPost(payload: CreatePostPayload, validate: boolean = false): Promise<APIResponse> {
-    return await this.apiClient.post('/posts', createPostResponseSchema, { data: payload }, validate);
+    return await this.apiClient.post(
+      '/posts',
+      createPostResponseSchema,
+      { data: payload },
+      validate
+    );
   }
 
   @step('Update post: {0}')
-  async updatePost(id: number, payload: UpdatePostPayload, validate: boolean = false): Promise<APIResponse> {
+  async updatePost(
+    id: number,
+    payload: UpdatePostPayload,
+    validate: boolean = false
+  ): Promise<APIResponse> {
     return await this.apiClient.put(`/posts/${id}`, postSchema, { data: payload }, validate);
   }
 
   @step('Patch post: {0}')
-  async patchPost(id: number, payload: Partial<UpdatePostPayload>, validate: boolean = false): Promise<APIResponse> {
+  async patchPost(
+    id: number,
+    payload: Partial<UpdatePostPayload>,
+    validate: boolean = false
+  ): Promise<APIResponse> {
     return await this.apiClient.patch(`/posts/${id}`, postSchema, { data: payload }, validate);
   }
 

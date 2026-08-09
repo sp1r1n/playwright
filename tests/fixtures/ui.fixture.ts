@@ -1,5 +1,5 @@
 import { test as base } from './api.fixture';
-import { Pages } from '../../src/ui';
+import { Pages } from '@src/ui';
 import { attachment, ContentType } from 'allure-js-commons';
 
 /**

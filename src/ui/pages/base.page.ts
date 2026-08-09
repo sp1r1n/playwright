@@ -1,5 +1,5 @@
-import { Page, Locator, expect } from '@playwright/test';
-import { step } from '../../utils/decorators';
+import { Page, Locator } from '@playwright/test';
+import { step } from '@utils/decorators';
 import { attachment, ContentType } from 'allure-js-commons';
 
 /**
