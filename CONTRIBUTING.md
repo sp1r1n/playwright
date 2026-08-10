@@ -33,7 +33,7 @@ something readable by someone who did not write the test.
 
 **Tag new tests.** `@smoke` for the handful that must pass before anything else is worth
 running, `@regression` for the safety net, `@functional` for feature detail, `@negative` for
-error paths.
+error paths, `@contract` for tests that assert a response still matches its schema.
 
 **Set Allure metadata.** `feature`, `story` and `severity` are what make the report navigable
 once there are more than a few dozen tests.
