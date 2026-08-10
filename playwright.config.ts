@@ -2,7 +2,9 @@ import { defineConfig, devices, type ReporterDescription } from '@playwright/tes
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+// `quiet` suppresses the promotional tips dotenv 17 prints on every load, which would
+// otherwise appear in front of every test run and in CI logs.
+dotenv.config({ path: path.resolve(__dirname, '.env'), quiet: true });
 
 const CI = !!process.env.CI;
 

@@ -3,7 +3,7 @@
 [![Tests](https://github.com/sp1r1n/playwright/actions/workflows/ci.yml/badge.svg)](https://github.com/sp1r1n/playwright/actions/workflows/ci.yml)
 [![Allure report](https://img.shields.io/badge/Allure-live%20report-brightgreen)](https://sp1r1n.github.io/playwright/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Playwright](https://img.shields.io/badge/Playwright-1.50-45ba4b)](https://playwright.dev/)
+[![Playwright](https://img.shields.io/badge/Playwright-1.62-45ba4b)](https://playwright.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6)](https://www.typescriptlang.org/)
 
 UI and API test automation in TypeScript, reported through Allure and published to GitHub Pages
@@ -64,7 +64,7 @@ npm run install:browsers
 npm test
 ```
 
-Node 18+. Allure report generation additionally needs a JRE.
+Node 20+. Allure report generation additionally needs a JRE.
 
 Configuration is optional — every default is a working public endpoint:
 
@@ -120,7 +120,7 @@ npm run test:headed   # with a visible browser
 npm run test:debug    # Playwright Inspector
 ```
 
-Tags in use: `@smoke`, `@regression`, `@functional`, `@negative`.
+Tags in use: `@smoke`, `@regression`, `@functional`, `@negative`, `@contract`.
 
 ```bash
 npx playwright test --grep "@smoke|@negative"
